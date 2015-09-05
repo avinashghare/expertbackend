@@ -33,8 +33,15 @@
             ?>
                 <label class="col-sm-2 control-label" for="normal-field">Image</label>
                 <div class="col-sm-4">
-                    <input type="file" id="normal-field" class="form-control" name="image" value='<?php echo set_value(' image ',$beforegallery->image);?>'>
-                </div>
+					<input type="file" id="normal-field" class="form-control" name="image" value="<?php echo set_value('image',$beforegallery->image);?>">
+					<?php if($beforegallery->image == "")
+						 { }
+						 else
+						 { ?>
+							<img src="<?php echo base_url('uploads')."/".$beforegallery->image; ?>" width="140px" height="140px">
+						<?php }
+					?>
+				  </div>
             </div>
             <?php
             if($beforegallery->type==1)
