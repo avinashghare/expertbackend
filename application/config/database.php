@@ -44,13 +44,33 @@
 | The $active_record variables lets you determine whether or not to load
 | the active record class
 */
-//
 
 $active_group = 'default';
 $active_record = TRUE;
 
 
+$myserver=$_SERVER['SERVER_NAME'];
 
+if($myserver!="localhost")
+{
+$db['default']['hostname'] = 'localhost';
+$db['default']['username'] = 'wohligco_expert';
+$db['default']['password'] = 'avinash123';
+$db['default']['database'] = 'wohligco_expert';
+$db['default']['dbdriver'] = 'mysql';
+$db['default']['dbprefix'] = '';
+$db['default']['pconnect'] = TRUE;
+$db['default']['db_debug'] = TRUE;
+$db['default']['cache_on'] = FALSE;
+$db['default']['cachedir'] = '';
+$db['default']['char_set'] = 'utf8';
+$db['default']['dbcollat'] = 'utf8_general_ci';
+$db['default']['swap_pre'] = '';
+$db['default']['autoinit'] = TRUE;
+$db['default']['stricton'] = FALSE;
+}
+else
+{
 $db['default']['hostname'] = 'localhost';
 $db['default']['username'] = 'root';
 $db['default']['password'] = '';
@@ -67,9 +87,23 @@ $db['default']['swap_pre'] = '';
 $db['default']['autoinit'] = TRUE;
 $db['default']['stricton'] = FALSE;
 
+}
 
-
-
+//$db['default']['hostname'] = 'localhost';
+//$db['default']['username'] = 'mafiawar_getall';
+//$db['default']['password'] = 'chintan123';
+//$db['default']['database'] = 'mafiawar_getall';
+//$db['default']['dbdriver'] = 'mysql';
+//$db['default']['dbprefix'] = '';
+//$db['default']['pconnect'] = TRUE;
+//$db['default']['db_debug'] = TRUE;
+//$db['default']['cache_on'] = FALSE;
+//$db['default']['cachedir'] = '';
+//$db['default']['char_set'] = 'utf8';
+//$db['default']['dbcollat'] = 'utf8_general_ci';
+//$db['default']['swap_pre'] = '';
+//$db['default']['autoinit'] = TRUE;
+//$db['default']['stricton'] = FALSE;
 
 /* End of file database.php */
 /* Location: ./application/config/database.php */

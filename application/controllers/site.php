@@ -22,18 +22,36 @@ class Site extends CI_Controller
 	}
 	public function index()
 	{
-		$access = array("1","2");
+		$access = array("1","2","3");
 		$this->checkaccess($access);
-		$data[ 'page' ] = 'dashboard';
-		$data[ 'title' ] = 'Welcome';
+        $accesslevel=$this->session->userdata('accesslevel');
+//        echo $accesslevel;
+        if($accesslevel==1)
+        {
+            $data['systempercent']=$this->transaction_model->getsystempercent();
+            $data['payment']=$this->transaction_model->getsystemamount();
+            $data[ 'page' ] = 'dashboard';
+            $data[ 'title' ] = 'Welcome';
+        }
+        else if($accesslevel==2)
+        {
+            $data[ 'page' ] = 'moderatordashboard';
+            $data[ 'title' ] = 'Welcome';
+        }
+        else if($accesslevel==3)
+        {
+            $data[ 'page' ] = 'accountantdashboard';
+            $data[ 'title' ] = 'Welcome';
+        }
 		$this->load->view( 'template', $data );	
 	}
 	public function createuser()
 	{
-		$access = array("1");
+		$access = array("1","2");
 		$this->checkaccess($access);
 		$data['accesslevel']=$this->user_model->getaccesslevels();
 		$data[ 'status' ] =$this->user_model->getstatusdropdown();
+		$data[ 'type' ] =$this->user_model->getameturetypedropdown();
 		$data[ 'logintype' ] =$this->user_model->getlogintypedropdown();
 //        $data['category']=$this->category_model->getcategorydropdown();
 		$data[ 'page' ] = 'createuser';
@@ -42,7 +60,7 @@ class Site extends CI_Controller
 	}
 	function createusersubmit()
 	{
-		$access = array("1");
+		$access = array("1","2");
 		$this->checkaccess($access);
 		$this->form_validation->set_rules('name','Name','trim|required|max_length[30]');
 		$this->form_validation->set_rules('email','Email','trim|required|valid_email|is_unique[user.email]');
@@ -59,6 +77,7 @@ class Site extends CI_Controller
 			$data['accesslevel']=$this->user_model->getaccesslevels();
             $data[ 'status' ] =$this->user_model->getstatusdropdown();
             $data[ 'logintype' ] =$this->user_model->getlogintypedropdown();
+            $data[ 'type' ] =$this->user_model->getameturetypedropdown();
             $data['category']=$this->category_model->getcategorydropdown();
             $data[ 'page' ] = 'createuser';
             $data[ 'title' ] = 'Create User';
@@ -74,6 +93,14 @@ class Site extends CI_Controller
             $socialid=$this->input->post('socialid');
             $logintype=$this->input->post('logintype');
             $json=$this->input->post('json');
+            $contact=$this->input->post('contact');
+            $wallet=$this->input->post('wallet');
+            $percent=$this->input->post('percent');
+            
+            $type=$this->input->post('type');
+            $ametureprice=$this->input->post('ametureprice');
+            $professionalprice=$this->input->post('professionalprice');
+            
 //            $category=$this->input->post('category');
             
             $config['upload_path'] = './uploads/';
@@ -111,7 +138,7 @@ class Site extends CI_Controller
                 
 			}
             
-			if($this->user_model->create($name,$email,$password,$accesslevel,$status,$socialid,$logintype,$image,$json)==0)
+			if($this->user_model->create($name,$email,$password,$accesslevel,$status,$socialid,$logintype,$image,$json,$wallet,$contact,$percent,$type,$ametureprice,$professionalprice)==0)
 			$data['alerterror']="New user could not be created.";
 			else
 			$data['alertsuccess']="User created Successfully.";
@@ -121,20 +148,23 @@ class Site extends CI_Controller
 	}
     function viewusers()
 	{
-		$access = array("1");
+		$access = array("1","2");
 		$this->checkaccess($access);
 		$data['page']='viewusers';
         $data['base_url'] = site_url("site/viewusersjson");
-        
+//        print_r($data);
 		$data['title']='View Users';
 		$this->load->view('template',$data);
 	} 
     function viewusersjson()
 	{
-		$access = array("1");
-		$this->checkaccess($access);
+        $where="WHERE 1 AND `user`.`accesslevel`=4 ";
         
-        
+        $accesslevel=$this->session->userdata('accesslevel');
+        if($accesslevel==2)
+        {
+            $where.=" AND `user`.`accesslevel` >= 2";
+        }
         $elements=array();
         $elements[0]=new stdClass();
         $elements[0]->field="`user`.`id`";
@@ -185,6 +215,12 @@ class Site extends CI_Controller
         $elements[7]->header="Status";
         $elements[7]->alias="status";
        
+        $elements[8]=new stdClass();
+        $elements[8]->field="`user`.`type`";
+        $elements[8]->sort="1";
+        $elements[8]->header="Type";
+        $elements[8]->alias="type";
+       
         
         $search=$this->input->get_post("search");
         $pageno=$this->input->get_post("pageno");
@@ -202,7 +238,7 @@ class Site extends CI_Controller
             $orderorder="ASC";
         }
        
-        $data["message"]=$this->chintantable->query($pageno,$maxrow,$orderby,$orderorder,$search,$elements,"FROM `user` LEFT OUTER JOIN `logintype` ON `logintype`.`id`=`user`.`logintype` LEFT OUTER JOIN `accesslevel` ON `accesslevel`.`id`=`user`.`accesslevel` LEFT OUTER JOIN `statuses` ON `statuses`.`id`=`user`.`status`");
+        $data["message"]=$this->chintantable->query($pageno,$maxrow,$orderby,$orderorder,$search,$elements,"FROM `user` LEFT OUTER JOIN `logintype` ON `logintype`.`id`=`user`.`logintype` LEFT OUTER JOIN `accesslevel` ON `accesslevel`.`id`=`user`.`accesslevel` LEFT OUTER JOIN `statuses` ON `statuses`.`id`=`user`.`status`","$where");
         
 		$this->load->view("json",$data);
 	} 
@@ -210,11 +246,12 @@ class Site extends CI_Controller
     
 	function edituser()
 	{
-		$access = array("1");
+		$access = array("1","2");
 		$this->checkaccess($access);
 		$data[ 'status' ] =$this->user_model->getstatusdropdown();
 		$data['accesslevel']=$this->user_model->getaccesslevels();
 		$data[ 'logintype' ] =$this->user_model->getlogintypedropdown();
+		$data[ 'type' ] =$this->user_model->getameturetypedropdown();
 		$data['before']=$this->user_model->beforeedit($this->input->get('id'));
 		$data['page']='edituser';
 		$data['page2']='block/userblock';
@@ -223,7 +260,7 @@ class Site extends CI_Controller
 	}
 	function editusersubmit()
 	{
-		$access = array("1");
+		$access = array("1","2");
 		$this->checkaccess($access);
 		
 		$this->form_validation->set_rules('name','Name','trim|required|max_length[30]');
@@ -241,6 +278,7 @@ class Site extends CI_Controller
 			$data[ 'status' ] =$this->user_model->getstatusdropdown();
 			$data['accesslevel']=$this->user_model->getaccesslevels();
             $data[ 'logintype' ] =$this->user_model->getlogintypedropdown();
+            $data[ 'type' ] =$this->user_model->getameturetypedropdown();
 			$data['before']=$this->user_model->beforeedit($this->input->post('id'));
 			$data['page']='edituser';
 			$data['page2']='block/userblock';
@@ -259,6 +297,14 @@ class Site extends CI_Controller
             $socialid=$this->input->get_post('socialid');
             $logintype=$this->input->get_post('logintype');
             $json=$this->input->get_post('json');
+            $contact=$this->input->get_post('contact');
+            $wallet=$this->input->get_post('wallet');
+            $percent=$this->input->get_post('percent');
+            
+            $type=$this->input->post('type');
+            $ametureprice=$this->input->post('ametureprice');
+            $professionalprice=$this->input->post('professionalprice');
+            
 //            $category=$this->input->get_post('category');
             
             $config['upload_path'] = './uploads/';
@@ -303,7 +349,7 @@ class Site extends CI_Controller
                 $image=$image->image;
             }
             
-			if($this->user_model->edit($id,$name,$email,$password,$accesslevel,$status,$socialid,$logintype,$image,$json)==0)
+			if($this->user_model->edit($id,$name,$email,$password,$accesslevel,$status,$socialid,$logintype,$image,$json,$wallet,$contact,$percent,$type,$ametureprice,$professionalprice)==0)
 			$data['alerterror']="User Editing was unsuccesful";
 			else
 			$data['alertsuccess']="User edited Successfully.";
@@ -732,7 +778,7 @@ class Site extends CI_Controller
     }
     public function viewbooking()
     {
-        $access=array("1");
+        $access=array("1","2");
         $this->checkaccess($access);
         $data["page"]="viewbooking";
         $data["base_url"]=site_url("site/viewbookingjson");
@@ -816,7 +862,7 @@ class Site extends CI_Controller
 
     public function createbooking()
     {
-        $access=array("1");
+        $access=array("1","2");
         $this->checkaccess($access);
         $data["page"]="createbooking";
         $data["title"]="Create booking";
@@ -826,7 +872,7 @@ class Site extends CI_Controller
     }
     public function createbookingsubmit() 
     {
-        $access=array("1");
+        $access=array("1","2");
         $this->checkaccess($access);
         $this->form_validation->set_rules("fromuser","From User","trim");
         $this->form_validation->set_rules("touser","To User","trim");
@@ -861,7 +907,7 @@ class Site extends CI_Controller
     }
     public function editbooking()
     {
-        $access=array("1");
+        $access=array("1","2");
         $this->checkaccess($access);
         $data["page"]="editbooking";
         $data["title"]="Edit booking";
@@ -873,7 +919,7 @@ class Site extends CI_Controller
     }
     public function editbookingsubmit()
     {
-        $access=array("1");
+        $access=array("1","2");
         $this->checkaccess($access);
         $this->form_validation->set_rules("id","ID","trim");
         $this->form_validation->set_rules("fromuser","From User","trim");
@@ -911,7 +957,7 @@ class Site extends CI_Controller
     }
     public function deletebooking()
     {
-        $access=array("1");
+        $access=array("1","2");
         $this->checkaccess($access);
         $this->booking_model->delete($this->input->get("id"));
         $data["redirect"]="site/viewbooking";
@@ -919,7 +965,7 @@ class Site extends CI_Controller
     }
     public function viewquestion()
     {
-        $access=array("1");
+        $access=array("1","2");
         $this->checkaccess($access);
         $data["page"]="viewquestion";
         $data["base_url"]=site_url("site/viewquestionjson");
@@ -974,7 +1020,7 @@ class Site extends CI_Controller
 
     public function createquestion()
     {
-        $access=array("1");
+        $access=array("1","2");
         $this->checkaccess($access);
         $data["page"]="createquestion";
         $data["title"]="Create question";
@@ -983,7 +1029,7 @@ class Site extends CI_Controller
     }
     public function createquestionsubmit() 
     {
-        $access=array("1");
+        $access=array("1","2");
         $this->checkaccess($access);
         $this->form_validation->set_rules("fromuser","From User","trim");
         $this->form_validation->set_rules("question","Question","trim");
@@ -1009,7 +1055,7 @@ class Site extends CI_Controller
     }
     public function editquestion()
     {
-        $access=array("1");
+        $access=array("1","2");
         $this->checkaccess($access);
         $data["page"]="editquestion";
         $data["page2"]="block/questionblock";
@@ -1020,7 +1066,7 @@ class Site extends CI_Controller
     }
     public function editquestionsubmit()
     {
-        $access=array("1");
+        $access=array("1","2");
         $this->checkaccess($access);
         $this->form_validation->set_rules("id","ID","trim");
         $this->form_validation->set_rules("fromuser","From User","trim");
@@ -1049,7 +1095,7 @@ class Site extends CI_Controller
     }
     public function deletequestion()
     {
-        $access=array("1");
+        $access=array("1","2");
         $this->checkaccess($access);
         $this->question_model->delete($this->input->get("id"));
         $data["redirect"]="site/viewquestion";
@@ -2639,7 +2685,7 @@ class Site extends CI_Controller
     }
     public function viewtransaction()
     {
-        $access=array("1");
+        $access=array("1","3");
         $this->checkaccess($access);
         $data["page"]="viewtransaction";
         $data["base_url"]=site_url("site/viewtransactionjson");
@@ -2687,6 +2733,24 @@ class Site extends CI_Controller
         $elements[6]->header="tousername";
         $elements[6]->alias="tousername";
         
+        $elements[7]=new stdClass();
+        $elements[7]->field="`expert_transaction`.`timestamp`";
+        $elements[7]->sort="1";
+        $elements[7]->header="timestamp";
+        $elements[7]->alias="timestamp";
+        
+        $elements[8]=new stdClass();
+        $elements[8]->field="`expert_transaction`.`remark`";
+        $elements[8]->sort="1";
+        $elements[8]->header="remark";
+        $elements[8]->alias="remark";
+        
+        $elements[9]=new stdClass();
+        $elements[9]->field="`transactiontype`.`name`";
+        $elements[9]->sort="1";
+        $elements[9]->header="typename";
+        $elements[9]->alias="typename";
+        
         $search=$this->input->get_post("search");
         $pageno=$this->input->get_post("pageno");
         $orderby=$this->input->get_post("orderby");
@@ -2701,22 +2765,23 @@ class Site extends CI_Controller
         $orderby="id";
         $orderorder="ASC";
         }
-        $data["message"]=$this->chintantable->query($pageno,$maxrow,$orderby,$orderorder,$search,$elements,"FROM `expert_transaction`  LEFT OUTER JOIN `user` AS `tab1` ON `expert_transaction`.`fromuser`= `tab1`.`id`  LEFT OUTER JOIN `user` AS `tab2` ON `expert_transaction`.`touser`= `tab2`.`id` ");
+        $data["message"]=$this->chintantable->query($pageno,$maxrow,$orderby,$orderorder,$search,$elements,"FROM `expert_transaction`  LEFT OUTER JOIN `user` AS `tab1` ON `expert_transaction`.`fromuser`= `tab1`.`id`  LEFT OUTER JOIN `user` AS `tab2` ON `expert_transaction`.`touser`= `tab2`.`id`   LEFT OUTER JOIN `transactiontype` ON `expert_transaction`.`type`= `transactiontype`.`id` ");
         $this->load->view("json",$data);
     }
 
     public function createtransaction()
     {
-        $access=array("1");
+        $access=array("1","3");
         $this->checkaccess($access);
         $data["page"]="createtransaction";
         $data["title"]="Create transaction";
         $data["user"]=$this->user_model->getuserdropdown();
+        $data["type"]=$this->transaction_model->gettransactiontypedropdown();
         $this->load->view("template",$data);
     }
     public function createtransactionsubmit() 
     {
-        $access=array("1");
+        $access=array("1","3");
         $this->checkaccess($access);
         $this->form_validation->set_rules("fromuser","From User","trim");
         $this->form_validation->set_rules("touser","To User","trim");
@@ -2727,6 +2792,7 @@ class Site extends CI_Controller
             $data["alerterror"]=validation_errors();
             $data["page"]="createtransaction";
             $data["title"]="Create transaction";
+        $data["type"]=$this->transaction_model->gettransactiontypedropdown();
             $data["user"]=$this->user_model->getuserdropdown();
             $this->load->view("template",$data);
         }
@@ -2736,7 +2802,8 @@ class Site extends CI_Controller
             $touser=$this->input->get_post("touser");
             $amount=$this->input->get_post("amount");
             $type=$this->input->get_post("type");
-            if($this->transaction_model->create($fromuser,$touser,$amount,$type)==0)
+            $remark=$this->input->get_post("remark");
+            if($this->transaction_model->create($fromuser,$touser,$amount,$type,$remark)==0)
             $data["alerterror"]="New transaction could not be created.";
             else
             $data["alertsuccess"]="transaction created Successfully.";
@@ -2746,17 +2813,18 @@ class Site extends CI_Controller
     }
     public function edittransaction()
     {
-        $access=array("1");
+        $access=array("1","3");
         $this->checkaccess($access);
         $data["page"]="edittransaction";
         $data["title"]="Edit transaction";
+        $data["type"]=$this->transaction_model->gettransactiontypedropdown();
         $data["user"]=$this->user_model->getuserdropdown();
         $data["before"]=$this->transaction_model->beforeedit($this->input->get("id"));
         $this->load->view("template",$data);
     }
     public function edittransactionsubmit()
     {
-        $access=array("1");
+        $access=array("1","3");
         $this->checkaccess($access);
         $this->form_validation->set_rules("id","ID","trim");
         $this->form_validation->set_rules("fromuser","From User","trim");
@@ -2768,6 +2836,7 @@ class Site extends CI_Controller
             $data["alerterror"]=validation_errors();
             $data["page"]="edittransaction";
             $data["title"]="Edit transaction";
+        $data["type"]=$this->transaction_model->gettransactiontypedropdown();
             $data["user"]=$this->user_model->getuserdropdown();
             $data["before"]=$this->transaction_model->beforeedit($this->input->get("id"));
             $this->load->view("template",$data);
@@ -2779,7 +2848,8 @@ class Site extends CI_Controller
             $touser=$this->input->get_post("touser");
             $amount=$this->input->get_post("amount");
             $type=$this->input->get_post("type");
-            if($this->transaction_model->edit($id,$fromuser,$touser,$amount,$type)==0)
+            $remark=$this->input->get_post("remark");
+            if($this->transaction_model->edit($id,$fromuser,$touser,$amount,$type,$remark)==0)
             $data["alerterror"]="New transaction could not be Updated.";
             else
             $data["alertsuccess"]="transaction Updated Successfully.";
@@ -2789,12 +2859,662 @@ class Site extends CI_Controller
     }
     public function deletetransaction()
     {
-        $access=array("1");
+        $access=array("1","3");
         $this->checkaccess($access);
         $this->transaction_model->delete($this->input->get("id"));
         $data["redirect"]="site/viewtransaction";
         $this->load->view("redirect",$data);
     }
+    
+    public function viewuserquestion()
+    {
+        $access=array("1");
+        $this->checkaccess($access);
+        $data["page"]="viewuserquestion";
+        $data["page2"]="block/userblock";
+        $data['user']=$this->input->get('id');
+        $data['before']=$this->user_model->beforeedit($this->input->get('id'));
+        $data["base_url"]=site_url("site/viewuserquestionjson?id=".$this->input->get('id'));
+        $data["title"]="View userquestion";
+        $this->load->view("templatewith2",$data);
+    }
+    function viewuserquestionjson()
+    {
+        $id=$this->input->get('id');
+        $elements=array();
+        $elements[0]=new stdClass();
+        $elements[0]->field="`expert_questionuser`.`id`";
+        $elements[0]->sort="1";
+        $elements[0]->header="ID";
+        $elements[0]->alias="id";
+        
+        $elements[1]=new stdClass();
+        $elements[1]->field="`expert_questionuser`.`question`";
+        $elements[1]->sort="1";
+        $elements[1]->header="Questionid";
+        $elements[1]->alias="questionid";
+        
+        $elements[2]=new stdClass();
+        $elements[2]->field="`expert_questionuser`.`touser`";
+        $elements[2]->sort="1";
+        $elements[2]->header="To User Id";
+        $elements[2]->alias="touserid";
+        
+        $elements[3]=new stdClass();
+        $elements[3]->field="`expert_questionuser`.`status`";
+        $elements[3]->sort="1";
+        $elements[3]->header="Statusid";
+        $elements[3]->alias="statusid";
+        
+        $elements[4]=new stdClass();
+        $elements[4]->field="`user`.`name`";
+        $elements[4]->sort="1";
+        $elements[4]->header="To User";
+        $elements[4]->alias="touser";
+        
+        $elements[5]=new stdClass();
+        $elements[5]->field="`expert_questionuserstatus`.`name`";
+        $elements[5]->sort="1";
+        $elements[5]->header="Status";
+        $elements[5]->alias="status";
+        
+        $elements[6]=new stdClass();
+        $elements[6]->field="`expert_question`.`question`";
+        $elements[6]->sort="1";
+        $elements[6]->header="Question";
+        $elements[6]->alias="question";
+        
+        $search=$this->input->get_post("search");
+        $pageno=$this->input->get_post("pageno");
+        $orderby=$this->input->get_post("orderby");
+        $orderorder=$this->input->get_post("orderorder");
+        $maxrow=$this->input->get_post("maxrow");
+        if($maxrow=="")
+        {
+            $maxrow=20;
+        }
+        if($orderby=="")
+        {
+            $orderby="id";
+            $orderorder="ASC";
+        }
+        $data["message"]=$this->chintantable->query($pageno,$maxrow,$orderby,$orderorder,$search,$elements,"FROM `expert_questionuser` LEFT OUTER JOIN `user` ON `user`.`id`=`expert_questionuser`.`touser` LEFT OUTER JOIN `expert_questionuserstatus` ON `expert_questionuserstatus`.`id`=`expert_questionuser`.`status` LEFT OUTER JOIN `expert_question` ON `expert_question`.`id`=`expert_questionuser`.`question`","WHERE `expert_questionuser`.`touser`='$id'");
+        $this->load->view("json",$data);
+    }
 
+    public function createuserquestion()
+    {
+        $access=array("1");
+        $this->checkaccess($access);
+        $data["page"]="createuserquestion";
+        $data["title"]="Create userquestion";
+        $data["page2"]="block/userblock";
+        $data['user']=$this->input->get('id');
+//        $data['user']=$this->user_model->getuserdropdown();
+        $data['question']=$this->question_model->getquestiondropdown();
+        $data['status']=$this->questionuserstatus_model->getquestionuserstatus();
+        $data['before']=$this->user_model->beforeedit($this->input->get('id'));
+        $this->load->view("templatewith2",$data);
+    }
+    public function createuserquestionsubmit() 
+    {
+        $access=array("1");
+        $this->checkaccess($access);
+        $this->form_validation->set_rules("question","Question","trim");
+        $this->form_validation->set_rules("touser","To User","trim");
+        $this->form_validation->set_rules("status","Status","trim");
+        if($this->form_validation->run()==FALSE)
+        {
+            $data["alerterror"]=validation_errors();
+            $data["page"]="createuserquestion";
+            $data["title"]="Create userquestion";
+            $data["page2"]="block/userblock";
+            $data['user']=$this->input->get('id');
+    //        $data['user']=$this->user_model->getuserdropdown();
+            $data['question']=$this->question_model->getquestiondropdown();
+            $data['status']=$this->questionuserstatus_model->getquestionuserstatus();
+            $data['before']=$this->user_model->beforeedit($this->input->get('id'));
+            $this->load->view("templatewith2",$data);
+        }
+        else
+        {
+            $question=$this->input->get_post("question");
+            $touser=$this->input->get_post("touser");
+            $status=$this->input->get_post("status");
+            if($this->questionuser_model->create($question,$touser,$status)==0)
+            $data["alerterror"]="New questionuser could not be created.";
+            else
+            $data["alertsuccess"]="questionuser created Successfully.";
+            $data["redirect"]="site/viewuserquestion?id=".$touser;
+            $this->load->view("redirect2",$data);
+        }
+    }
+    public function edituserquestion()
+    {
+        $access=array("1");
+        $this->checkaccess($access);
+        $data["page"]="edituserquestion";
+        $data["title"]="Edit userquestion";
+        $data["page2"]="block/userblock";
+        $data['user']=$this->input->get('id');
+//        $data['user']=$this->user_model->getuserdropdown();
+        $data['status']=$this->questionuserstatus_model->getquestionuserstatus();
+        $data['question']=$this->question_model->getquestiondropdown();
+        $data['before']=$this->user_model->beforeedit($this->input->get('id'));
+        $data["beforequestionuser"]=$this->questionuser_model->beforeedit($this->input->get("questionuserid"));
+        $this->load->view("templatewith2",$data);
+    }
+    public function edituserquestionsubmit()
+    {
+        $access=array("1");
+        $this->checkaccess($access);
+        $this->form_validation->set_rules("id","ID","trim");
+        $this->form_validation->set_rules("question","Question","trim");
+        $this->form_validation->set_rules("touser","To User","trim");
+        $this->form_validation->set_rules("status","Status","trim");
+        if($this->form_validation->run()==FALSE)
+        {
+            $data["alerterror"]=validation_errors();
+            $data["page"]="edituserquestion";
+            $data["title"]="Edit userquestion";
+            $data["page2"]="block/userblock";
+            $data['user']=$this->input->get('id');
+    //        $data['user']=$this->user_model->getuserdropdown();
+            $data['status']=$this->questionuserstatus_model->getquestionuserstatus();
+            $data['question']=$this->question_model->getquestiondropdown();
+            $data['before']=$this->user_model->beforeedit($this->input->get('id'));
+            $data["beforequestionuser"]=$this->questionuser_model->beforeedit($this->input->get("questionuserid"));
+            $this->load->view("templatewith2",$data);
+        }
+        else
+        {
+            $id=$this->input->get_post("id");
+            $question=$this->input->get_post("question");
+            $touser=$this->input->get_post("touser");
+            $status=$this->input->get_post("status");
+            if($this->questionuser_model->edit($id,$question,$touser,$status)==0)
+            $data["alerterror"]="New questionuser could not be Updated.";
+            else
+            $data["alertsuccess"]="questionuser Updated Successfully.";
+            $data["redirect"]="site/viewuserquestion?id=".$touser;
+            $this->load->view("redirect2",$data);
+        }
+    }
+    public function deleteuserquestion()
+    {
+        $access=array("1");
+        $this->checkaccess($access);
+        $touser=$this->input->get_post('id');
+        $this->questionuser_model->delete($this->input->get("questionuserid"));
+        $data["redirect"]="site/viewuserquestion?id=".$touser;
+        $this->load->view("redirect2",$data);
+    }
+    
+    public function viewdetailsofbooking()
+    {
+        $access=array("1","2");
+        $this->checkaccess($access);
+        $data["page"]="viewdetailsofbooking";
+        $data["title"]="view Booking Details";
+        $data['bookingid']=$this->input->get('id');
+        $data['booking']=$this->booking_model->viewdetailsofbooking($this->input->get('id'));
+        $data["status"]=$this->bookingstatus_model->getbookingstatusdropdown();
+        $this->load->view("template",$data);
+    }
+    public function changestatus()
+    {
+        $id=$this->input->get_post('id');
+        $status=$this->input->get_post('status');
+        $data['message']=$this->booking_model->changestatus($id,$status);
+        $this->load->view("json",$data);
+        
+    }
+    
+    //for admin users
+	public function createuseradmin()
+	{
+		$access = array("1","2");
+		$this->checkaccess($access);
+		$data['accesslevel']=$this->user_model->getaccesslevels();
+		$data[ 'status' ] =$this->user_model->getstatusdropdown();
+		$data[ 'logintype' ] =$this->user_model->getlogintypedropdown();
+		$data[ 'page' ] = 'createuseradmin';
+		$data[ 'title' ] = 'Create Admins';
+		$this->load->view( 'template', $data );	
+	}
+	function createuseradminsubmit()
+	{
+		$access = array("1","2");
+		$this->checkaccess($access);
+		$this->form_validation->set_rules('name','Name','trim|required|max_length[30]');
+		$this->form_validation->set_rules('email','Email','trim|required|valid_email|is_unique[user.email]');
+		$this->form_validation->set_rules('password','Password','trim|required|min_length[6]|max_length[30]');
+		$this->form_validation->set_rules('confirmpassword','Confirm Password','trim|required|matches[password]');
+		$this->form_validation->set_rules('accessslevel','Accessslevel','trim');
+		$this->form_validation->set_rules('status','status','trim|');
+		$this->form_validation->set_rules('socialid','Socialid','trim');
+		$this->form_validation->set_rules('logintype','logintype','trim');
+		$this->form_validation->set_rules('json','json','trim');
+		if($this->form_validation->run() == FALSE)	
+		{
+			$data['alerterror'] = validation_errors();
+			$data['accesslevel']=$this->user_model->getaccesslevels();
+            $data[ 'status' ] =$this->user_model->getstatusdropdown();
+            $data[ 'logintype' ] =$this->user_model->getlogintypedropdown();
+            $data[ 'page' ] = 'createuseradmin';
+            $data[ 'title' ] = 'Create Admins';
+            $this->load->view( 'template', $data );		
+		}
+		else
+		{
+            $name=$this->input->post('name');
+            $email=$this->input->post('email');
+            $password=$this->input->post('password');
+            $accesslevel=$this->input->post('accesslevel');
+            $status=$this->input->post('status');
+            $socialid=$this->input->post('socialid');
+            $logintype=$this->input->post('logintype');
+            $json=$this->input->post('json');
+            $wallet=$this->input->post('wallet');
+            $contact=$this->input->post('contact');
+//            $category=$this->input->post('category');
+            
+            $config['upload_path'] = './uploads/';
+			$config['allowed_types'] = 'gif|jpg|png|jpeg';
+			$this->load->library('upload', $config);
+			$filename="image";
+			$image="";
+			if (  $this->upload->do_upload($filename))
+			{
+				$uploaddata = $this->upload->data();
+				$image=$uploaddata['file_name'];
+                
+                $config_r['source_image']   = './uploads/' . $uploaddata['file_name'];
+                $config_r['maintain_ratio'] = TRUE;
+                $config_t['create_thumb'] = FALSE;///add this
+                $config_r['width']   = 800;
+                $config_r['height'] = 800;
+                $config_r['quality']    = 100;
+                //end of configs
+
+                $this->load->library('image_lib', $config_r); 
+                $this->image_lib->initialize($config_r);
+                if(!$this->image_lib->resize())
+                {
+                    echo "Failed." . $this->image_lib->display_errors();
+                    //return false;
+                }  
+                else
+                {
+                    //print_r($this->image_lib->dest_image);
+                    //dest_image
+                    $image=$this->image_lib->dest_image;
+                    //return false;
+                }
+                
+			}
+            
+			if($this->user_model->createadmin($name,$email,$password,$accesslevel,$status,$socialid,$logintype,$image,$json,$wallet,$contact)==0)
+			$data['alerterror']="New Admin could not be created.";
+			else
+			$data['alertsuccess']="Admin created Successfully.";
+			$data['redirect']="site/viewuseradmin";
+			$this->load->view("redirect",$data);
+		}
+	}
+    function viewuseradmin()
+	{
+		$access = array("1","2");
+		$this->checkaccess($access);
+		$data['page']='viewuseradmin';
+        $data['base_url'] = site_url("site/viewuseradminjson");
+//        print_r($data);
+		$data['title']='View User Admin';
+		$this->load->view('template',$data);
+	} 
+    function viewuseradminjson()
+	{
+        $where="WHERE 1 AND `user`.`accesslevel`<=3 ";
+        
+//        $accesslevel=$this->session->userdata('accesslevel');
+//        if($accesslevel==2)
+//        {
+//            $where.=" AND `user`.`accesslevel` >= 2";
+//        }
+        $elements=array();
+        $elements[0]=new stdClass();
+        $elements[0]->field="`user`.`id`";
+        $elements[0]->sort="1";
+        $elements[0]->header="ID";
+        $elements[0]->alias="id";
+        
+        
+        $elements[1]=new stdClass();
+        $elements[1]->field="`user`.`name`";
+        $elements[1]->sort="1";
+        $elements[1]->header="Name";
+        $elements[1]->alias="name";
+        
+        $elements[2]=new stdClass();
+        $elements[2]->field="`user`.`email`";
+        $elements[2]->sort="1";
+        $elements[2]->header="Email";
+        $elements[2]->alias="email";
+        
+        $elements[3]=new stdClass();
+        $elements[3]->field="`user`.`socialid`";
+        $elements[3]->sort="1";
+        $elements[3]->header="SocialId";
+        $elements[3]->alias="socialid";
+        
+        $elements[4]=new stdClass();
+        $elements[4]->field="`logintype`.`name`";
+        $elements[4]->sort="1";
+        $elements[4]->header="Logintype";
+        $elements[4]->alias="logintype";
+        
+        $elements[5]=new stdClass();
+        $elements[5]->field="`user`.`json`";
+        $elements[5]->sort="1";
+        $elements[5]->header="Json";
+        $elements[5]->alias="json";
+       
+        $elements[6]=new stdClass();
+        $elements[6]->field="`accesslevel`.`name`";
+        $elements[6]->sort="1";
+        $elements[6]->header="Accesslevel";
+        $elements[6]->alias="accesslevelname";
+       
+        $elements[7]=new stdClass();
+        $elements[7]->field="`statuses`.`name`";
+        $elements[7]->sort="1";
+        $elements[7]->header="Status";
+        $elements[7]->alias="status";
+       
+        $elements[8]=new stdClass();
+        $elements[8]->field="`user`.`contact`";
+        $elements[8]->sort="1";
+        $elements[8]->header="Contact";
+        $elements[8]->alias="contact";
+       
+        
+        $search=$this->input->get_post("search");
+        $pageno=$this->input->get_post("pageno");
+        $orderby=$this->input->get_post("orderby");
+        $orderorder=$this->input->get_post("orderorder");
+        $maxrow=$this->input->get_post("maxrow");
+        if($maxrow=="")
+        {
+            $maxrow=20;
+        }
+        
+        if($orderby=="")
+        {
+            $orderby="id";
+            $orderorder="ASC";
+        }
+       
+        $data["message"]=$this->chintantable->query($pageno,$maxrow,$orderby,$orderorder,$search,$elements,"FROM `user` LEFT OUTER JOIN `logintype` ON `logintype`.`id`=`user`.`logintype` LEFT OUTER JOIN `accesslevel` ON `accesslevel`.`id`=`user`.`accesslevel` LEFT OUTER JOIN `statuses` ON `statuses`.`id`=`user`.`status`","$where");
+        
+		$this->load->view("json",$data);
+	} 
+    
+    
+	function edituseradmin()
+	{
+		$access = array("1","2");
+		$this->checkaccess($access);
+		$data[ 'status' ] =$this->user_model->getstatusdropdown();
+		$data['accesslevel']=$this->user_model->getaccesslevels();
+		$data[ 'logintype' ] =$this->user_model->getlogintypedropdown();
+		$data['before']=$this->user_model->beforeedit($this->input->get('id'));
+		$data['page']='edituseradmin';
+		$data['title']='Edit User Admin';
+		$this->load->view('template',$data);
+	}
+	function edituseradminsubmit()
+	{
+		$access = array("1","2");
+		$this->checkaccess($access);
+		
+		$this->form_validation->set_rules('name','Name','trim|required|max_length[30]');
+		$this->form_validation->set_rules('email','Email','trim|required|valid_email');
+		$this->form_validation->set_rules('password','Password','trim|min_length[6]|max_length[30]');
+		$this->form_validation->set_rules('confirmpassword','Confirm Password','trim|matches[password]');
+		$this->form_validation->set_rules('accessslevel','Accessslevel','trim');
+		$this->form_validation->set_rules('status','status','trim|');
+		$this->form_validation->set_rules('socialid','Socialid','trim');
+		$this->form_validation->set_rules('logintype','logintype','trim');
+		$this->form_validation->set_rules('json','json','trim');
+		if($this->form_validation->run() == FALSE)	
+		{
+			$data['alerterror'] = validation_errors();
+			$data[ 'status' ] =$this->user_model->getstatusdropdown();
+			$data['accesslevel']=$this->user_model->getaccesslevels();
+            $data[ 'logintype' ] =$this->user_model->getlogintypedropdown();
+			$data['before']=$this->user_model->beforeedit($this->input->post('id'));
+			$data['page']='edituser';
+			$data['page2']='block/userblock';
+			$data['title']='Edit User';
+			$this->load->view('templatewith2',$data);
+		}
+		else
+		{
+            
+            $id=$this->input->get_post('id');
+            $name=$this->input->get_post('name');
+            $email=$this->input->get_post('email');
+            $password=$this->input->get_post('password');
+            $accesslevel=$this->input->get_post('accesslevel');
+            $status=$this->input->get_post('status');
+            $socialid=$this->input->get_post('socialid');
+            $logintype=$this->input->get_post('logintype');
+            $json=$this->input->get_post('json');
+            $wallet=$this->input->get_post('wallet');
+            $contact=$this->input->get_post('contact');
+//            $category=$this->input->get_post('category');
+            
+            $config['upload_path'] = './uploads/';
+			$config['allowed_types'] = 'gif|jpg|png|jpeg';
+			$this->load->library('upload', $config);
+			$filename="image";
+			$image="";
+			if (  $this->upload->do_upload($filename))
+			{
+				$uploaddata = $this->upload->data();
+				$image=$uploaddata['file_name'];
+                
+                $config_r['source_image']   = './uploads/' . $uploaddata['file_name'];
+                $config_r['maintain_ratio'] = TRUE;
+                $config_t['create_thumb'] = FALSE;///add this
+                $config_r['width']   = 800;
+                $config_r['height'] = 800;
+                $config_r['quality']    = 100;
+                //end of configs
+
+                $this->load->library('image_lib', $config_r); 
+                $this->image_lib->initialize($config_r);
+                if(!$this->image_lib->resize())
+                {
+                    echo "Failed." . $this->image_lib->display_errors();
+                    //return false;
+                }  
+                else
+                {
+                    //print_r($this->image_lib->dest_image);
+                    //dest_image
+                    $image=$this->image_lib->dest_image;
+                    //return false;
+                }
+                
+			}
+            
+            if($image=="")
+            {
+            $image=$this->user_model->getuserimagebyid($id);
+               // print_r($image);
+                $image=$image->image;
+            }
+            
+			if($this->user_model->editadmin($id,$name,$email,$password,$accesslevel,$status,$socialid,$logintype,$image,$json,$wallet,$contact)==0)
+			$data['alerterror']="Admin Editing was unsuccesful";
+			else
+			$data['alertsuccess']="Admin edited Successfully.";
+			
+			$data['redirect']="site/viewuseradmin";
+			//$data['other']="template=$template";
+			$this->load->view("redirect",$data);
+			
+		}
+	}
+	
+	function deleteuseradmin()
+	{
+		$access = array("1");
+		$this->checkaccess($access);
+		$this->user_model->deleteuser($this->input->get('id'));
+//		$data['table']=$this->user_model->viewusers();
+		$data['alertsuccess']="Admin Deleted Successfully";
+		$data['redirect']="site/viewuseradmin";
+			//$data['other']="template=$template";
+		$this->load->view("redirect",$data);
+	}
+    
+    
+    public function createusertoadmintransaction()
+    {
+        $access=array("1","3");
+        $this->checkaccess($access);
+        $data["page"]="createusertoadmintransaction";
+        $data["title"]="Create transaction";
+        $data["user"]=$this->user_model->getuserdropdown();
+        $data["type"]=$this->transaction_model->gettransactiontypedropdown();
+        $this->load->view("template",$data);
+    }
+    public function createusertoadmintransactionsubmit() 
+    {
+        $access=array("1","3");
+        $this->checkaccess($access);
+        $this->form_validation->set_rules("fromuser","From User","trim");
+        $this->form_validation->set_rules("touser","To User","trim");
+        $this->form_validation->set_rules("amount","Amount","trim");
+        $this->form_validation->set_rules("type","Type","trim");
+        if($this->form_validation->run()==FALSE)
+        {
+            $data["alerterror"]=validation_errors();
+            $data["page"]="createtransaction";
+            $data["title"]="Create transaction";
+        $data["type"]=$this->transaction_model->gettransactiontypedropdown();
+            $data["user"]=$this->user_model->getuserdropdown();
+            $this->load->view("template",$data);
+        }
+        else
+        {
+            $fromuser=$this->input->get_post("fromuser");
+            $touser=0;
+            $amount=$this->input->get_post("amount");
+            $type=1;
+            $remark=$this->input->get_post("remark");
+            if($this->transaction_model->createusertoadmin($fromuser,$touser,$amount,$type,$remark)==0)
+            $data["alerterror"]="New transaction could not be created.";
+            else
+            $data["alertsuccess"]="transaction created Successfully.";
+            $data["redirect"]="site/createusertoadmintransaction";
+            $this->load->view("redirect",$data);
+        }
+    }
+    public function createusertousertransaction()
+    {
+        $access=array("1","3");
+        $this->checkaccess($access);
+        $data["page"]="createusertousertransaction";
+        $data["title"]="Create transaction";
+        $data["user"]=$this->user_model->getuserdropdown();
+        $data["type"]=$this->transaction_model->gettransactiontypedropdown();
+        $this->load->view("template",$data);
+    }
+    public function createusertousertransactionsubmit() 
+    {
+        $access=array("1","3");
+        $this->checkaccess($access);
+        $this->form_validation->set_rules("fromuser","From User","trim");
+        $this->form_validation->set_rules("touser","To User","trim");
+        $this->form_validation->set_rules("amount","Amount","trim");
+        $this->form_validation->set_rules("type","Type","trim");
+        if($this->form_validation->run()==FALSE)
+        {
+            $data["alerterror"]=validation_errors();
+            $data["page"]="createtransaction";
+            $data["title"]="Create transaction";
+        $data["type"]=$this->transaction_model->gettransactiontypedropdown();
+            $data["user"]=$this->user_model->getuserdropdown();
+            $this->load->view("template",$data);
+        }
+        else
+        {
+            $fromuser=$this->input->get_post("fromuser");
+            $touser=$this->input->get_post("touser");
+            $amount=$this->input->get_post("amount");
+            $type=2;
+            $remark=$this->input->get_post("remark");
+            if($this->transaction_model->createusertouser($fromuser,$touser,$amount,$type,$remark)==0)
+            $data["alerterror"]="New transaction could not be created.";
+            else
+            $data["alertsuccess"]="transaction created Successfully.";
+            $data["redirect"]="site/createusertousertransaction";
+            $this->load->view("redirect",$data);
+        }
+    }
+    
+    
+    public function createadmintousertransaction()
+    {
+        $access=array("1","3");
+        $this->checkaccess($access);
+        $data["page"]="createadmintousertransaction";
+        $data["title"]="Create transaction";
+        $data["user"]=$this->user_model->getuserdropdown();
+        $data["type"]=$this->transaction_model->gettransactiontypedropdown();
+        $this->load->view("template",$data);
+    }
+    public function createadmintousertransactionsubmit() 
+    {
+        $access=array("1","3");
+        $this->checkaccess($access);
+        $this->form_validation->set_rules("fromuser","From User","trim");
+        $this->form_validation->set_rules("touser","To User","trim");
+        $this->form_validation->set_rules("amount","Amount","trim");
+        $this->form_validation->set_rules("type","Type","trim");
+        if($this->form_validation->run()==FALSE)
+        {
+            $data["alerterror"]=validation_errors();
+            $data["page"]="createtransaction";
+            $data["title"]="Create transaction";
+        $data["type"]=$this->transaction_model->gettransactiontypedropdown();
+            $data["user"]=$this->user_model->getuserdropdown();
+            $this->load->view("template",$data);
+        }
+        else
+        {
+            $fromuser=$this->input->get_post("fromuser");
+            $touser=$this->input->get_post("touser");
+            $amount=$this->input->get_post("amount");
+            $type=2;
+            $remark=$this->input->get_post("remark");
+            if($this->transaction_model->createadmintouser($fromuser,$touser,$amount,$type,$remark)==0)
+            $data["alerterror"]="New transaction could not be created.";
+            else
+            $data["alertsuccess"]="transaction created Successfully.";
+            $data["redirect"]="site/createadmintousertransaction";
+            $this->load->view("redirect",$data);
+        }
+    }
+    public function updatesystempercentage()
+    {
+        $value=$this->input->get_post('value');
+        $this->db->query("UPDATE `systempercantage` SET `value`='$value' WHERE `id`='1'");
+        $data["redirect"]="site/index";
+        $this->load->view("redirect",$data);
+    }
 }
 ?>

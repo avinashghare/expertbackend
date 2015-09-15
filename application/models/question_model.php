@@ -37,5 +37,20 @@ class question_model extends CI_Model
         $query=$this->db->query("DELETE FROM `expert_question` WHERE `id`='$id'");
         return $query;
     }
+    
+    public function getquestiondropdown()
+	{
+		$query=$this->db->query("SELECT * FROM `expert_question`  ORDER BY `id` ASC")->result();
+		$return=array(
+		"" => ""
+		);
+		foreach($query as $row)
+		{
+			$return[$row->id]=$row->question;
+		}
+		
+		return $return;
+	}
+    
 }
 ?>

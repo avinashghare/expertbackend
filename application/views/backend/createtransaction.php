@@ -13,6 +13,13 @@ Create transaction </h3>
                 <div class="panel-body">
                     <form class='form-horizontal tasi-form' method='post' action='<?php echo site_url("site/createtransactionsubmit");?>' enctype='multipart/form-data'>
                         <div class="panel-body">
+                           
+                            <div class=" form-group">
+                                <label class="col-sm-2 control-label" for="normal-field">Type</label>
+                                <div class="col-sm-4">
+                                    <?php echo form_dropdown( "type",$type,set_value( 'type'), "class='chzn-select form-control'");?>
+                                </div>
+                            </div>
                             <div class=" form-group">
                                 <label class="col-sm-2 control-label" for="normal-field">From User</label>
                                 <div class="col-sm-4">
@@ -31,14 +38,13 @@ Create transaction </h3>
                                     <input type="text" id="normal-field" class="form-control" name="amount" value='<?php echo set_value(' amount ');?>'>
                                 </div>
                             </div>
-<!--
-                            <div class=" form-group">
-                                <label class="col-sm-2 control-label" for="normal-field">Type</label>
+                            
+                            <div class="form-group">
+                                <label class="col-sm-2 control-label" for="normal-field">remark</label>
                                 <div class="col-sm-4">
-                                    <?php echo form_dropdown( "type",$type,set_value( 'type'), "class='chzn-select form-control'");?>
+                                    <input type="text" id="normal-field" class="form-control" name="remark" value='<?php echo set_value(' remark ');?>'>
                                 </div>
                             </div>
--->
                             <div class="form-group">
                                 <label class="col-sm-2 control-label" for="normal-field">&nbsp;</label>
                                 <div class="col-sm-4">

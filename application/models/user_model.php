@@ -10,7 +10,7 @@ class User_model extends CI_Model
 		$password=md5($password);
 		$query ="SELECT `user`.`id`,`user`.`name` as `name`,`email`,`user`.`accesslevel`,`accesslevel`.`name` as `access` FROM `user`
 		INNER JOIN `accesslevel` ON `user`.`accesslevel` = `accesslevel`.`id` 
-		WHERE `email` LIKE '$username' AND `password` LIKE '$password' AND `status`=1 AND `accesslevel` IN (1,2) ";
+		WHERE `email` LIKE '$username' AND `password` LIKE '$password'  AND `accesslevel` IN (1,2,3) ";
 		$row =$this->db->query( $query );
 		if ( $row->num_rows() > 0 ) {
 			$row=$row->row();
@@ -21,7 +21,7 @@ class User_model extends CI_Model
 				'id' => $this->id,
 				'email' => $this->email,
 				'name' => $this->name ,
-				'accesslevel' => $row->accesslevel ,
+				'accesslevel' => $row->accesslevel,
 				'logged_in' => 'true',
 			);
 			$this->session->set_userdata( $newdata );
@@ -32,7 +32,7 @@ class User_model extends CI_Model
 	}
 	
 	
-	public function create($name,$email,$password,$accesslevel,$status,$socialid,$logintype,$image,$json)
+	public function create($name,$email,$password,$accesslevel,$status,$socialid,$logintype,$image,$json,$wallet,$contact,$percent,$type,$ametureprice,$professionalprice)
 	{
 		$data  = array(
 			'name' => $name,
@@ -43,6 +43,37 @@ class User_model extends CI_Model
             'socialid'=> $socialid,
             'image'=> $image,
             'json'=> $json,
+            'wallet'=> $wallet,
+            'contact'=> $contact,
+            'percent'=> $percent,
+            'type'=> $type,
+            'ametureprice'=> $ametureprice,
+            'professionalprice'=> $professionalprice,
+			'logintype' => $logintype
+		);
+		$query=$this->db->insert( 'user', $data );
+		$id=$this->db->insert_id();
+        
+		if(!$query)
+			return  0;
+		else
+			return  1;
+	}
+    
+	
+	public function createadmin($name,$email,$password,$accesslevel,$status,$socialid,$logintype,$image,$json,$wallet,$contact)
+	{
+		$data  = array(
+			'name' => $name,
+			'email' => $email,
+			'password' =>md5($password),
+			'accesslevel' => $accesslevel,
+			'status' => $status,
+            'socialid'=> $socialid,
+            'image'=> $image,
+            'json'=> $json,
+            'wallet'=> $wallet,
+            'contact'=> $contact,
 			'logintype' => $logintype
 		);
 		$query=$this->db->insert( 'user', $data );
@@ -87,7 +118,7 @@ class User_model extends CI_Model
 		return $query;
 	}
 	
-	public function edit($id,$name,$email,$password,$accesslevel,$status,$socialid,$logintype,$image,$json)
+	public function edit($id,$name,$email,$password,$accesslevel,$status,$socialid,$logintype,$image,$json,$wallet,$contact,$percent,$type,$ametureprice,$professionalprice)
 	{
 		$data  = array(
 			'name' => $name,
@@ -97,6 +128,35 @@ class User_model extends CI_Model
             'socialid'=> $socialid,
             'image'=> $image,
             'json'=> $json,
+            'wallet'=> $wallet,
+            'contact'=> $contact,
+            'percent'=> $percent,
+            'type'=> $type,
+            'ametureprice'=> $ametureprice,
+            'professionalprice'=> $professionalprice,
+			'logintype' => $logintype
+		);
+		if($password != "")
+			$data['password'] =md5($password);
+		$this->db->where( 'id', $id );
+		$query=$this->db->update( 'user', $data );
+        
+		return 1;
+	}
+    
+	
+	public function editadmin($id,$name,$email,$password,$accesslevel,$status,$socialid,$logintype,$image,$json,$wallet,$contact)
+	{
+		$data  = array(
+			'name' => $name,
+			'email' => $email,
+			'accesslevel' => $accesslevel,
+			'status' => $status,
+            'socialid'=> $socialid,
+            'image'=> $image,
+            'json'=> $json,
+            'wallet'=> $wallet,
+            'contact'=> $contact,
 			'logintype' => $logintype
 		);
 		if($password != "")
@@ -450,6 +510,14 @@ class User_model extends CI_Model
 			 "0" => "Image",
 			 "1" => "Audio",
 			 "2" => "Video"
+			);
+		return $type;
+	}
+    public function getameturetypedropdown()
+	{
+		$type= array(
+			 "0" => "Ameture",
+			 "1" => "Professional"
 			);
 		return $type;
 	}

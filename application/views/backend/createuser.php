@@ -46,6 +46,51 @@
 					<input type="password" id="description-field" class="form-control" name="confirmpassword" value="">
 				  </div>
 				</div>
+				<div class="form-group">
+				  <label class="col-sm-2 control-label" for="normal-field">Contact</label>
+				  <div class="col-sm-4">
+					<input type="text" id="normal-field" class="form-control" name="contact" value="<?php echo set_value('contact');?>">
+				  </div>
+				</div>
+				
+				<div class=" form-group">
+				  <label class="col-sm-2 control-label">Type (Ameture/Professional)</label>
+				  <div class="col-sm-4">
+					<?php
+						
+						echo form_dropdown('type',$type,set_value('type'),'class="chzn-select form-control" 	data-placeholder="Choose a Type..."');
+					?>
+				  </div>
+				</div>
+				
+				<div class="form-group">
+				  <label class="col-sm-2 control-label" for="normal-field">Ameture Price</label>
+				  <div class="col-sm-4">
+					<input type="text" id="normal-field" class="form-control" name="ametureprice" value="<?php echo set_value('ametureprice','250');?>">
+				  </div>
+				</div>
+				
+				<div class="form-group">
+				  <label class="col-sm-2 control-label" for="normal-field">Professional Price</label>
+				  <div class="col-sm-4">
+					<input type="text" id="normal-field" class="form-control" name="professionalprice" value="<?php echo set_value('professionalprice','500');?>">
+				  </div>
+				</div>
+				
+				<div class="form-group">
+				  <label class="col-sm-2 control-label" for="normal-field">Percent</label>
+				  <div class="col-sm-4">
+					<input type="text" id="normal-field" class="form-control" name="percent" value="<?php echo set_value('percent','70');?>">
+				  </div>
+				</div>
+				
+				<div class="form-group">
+				  <label class="col-sm-2 control-label" for="normal-field">Wallet</label>
+				  <div class="col-sm-4">
+					<input type="text" id="normal-field" class="form-control" name="wallet" value="<?php echo set_value('wallet');?>">
+				  </div>
+				</div>
+				
 				<div class=" form-group">
 				  <label class="col-sm-2 control-label" for="normal-field">SocialId</label>
 				  <div class="col-sm-4">
@@ -100,7 +145,7 @@
 				</div>
 -->
 				
-				<div class=" form-group">
+				<div class=" form-group" style="display:none;">
 				  <label class="col-sm-2 control-label" for="normal-field">json</label>
 				  <div class="col-sm-4">
 					<input type="text" id="normal-field" class="form-control" name="json" value="<?php echo set_value('json');?>">

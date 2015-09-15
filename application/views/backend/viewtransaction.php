@@ -17,6 +17,7 @@
                                     <th data-field="tousername">To User</th>
                                     <th data-field="amount">Amount</th>
                                     <th data-field="type">Type</th>
+                                    <th data-field="timestamp">timestamp</th>
                                     <th data-field="Action">Action</th>
                                 </tr>
                             </thead>
@@ -35,7 +36,15 @@
     </div>
     <script>
         function drawtable(resultrow) {
-            return "<tr><td>" + resultrow.id + "</td><td>" + resultrow.fromusername + "</td><td>" + resultrow.tousername + "</td><td>" + resultrow.amount + "</td><td>" + resultrow.type + "</td><td><a class='btn btn-primary btn-xs' href='<?php echo site_url('site/edittransaction?id=');?>" + resultrow.id + "'><i class='icon-pencil'></i></a><a class='btn btn-danger btn-xs' onclick=return confirm(\"Are you sure you want to delete?\") href='<?php echo site_url('site/deletetransaction?id='); ?>" + resultrow.id + "'><i class='icon-trash '></i></a></td></tr>";
+            if(resultrow.fromusername==null)
+            {
+                resultrow.fromusername="Admin";
+            }
+            if(resultrow.tousername==null)
+            {
+                resultrow.tousername="Admin";
+            }
+            return "<tr><td>" + resultrow.id + "</td><td>" + resultrow.fromusername + "</td><td>" + resultrow.tousername + "</td><td>" + resultrow.amount + "</td><td>" + resultrow.type + "</td><td>" + resultrow.timestamp + "</td><td><a class='btn btn-primary btn-xs' href='<?php echo site_url('site/edittransaction?id=');?>" + resultrow.id + "'><i class='icon-pencil'></i></a><a class='btn btn-danger btn-xs' onclick=return confirm(\"Are you sure you want to delete?\") href='<?php echo site_url('site/deletetransaction?id='); ?>" + resultrow.id + "'><i class='icon-trash '></i></a></td></tr>";
         }
         generatejquery("<?php echo $base_url;?>");
     </script>

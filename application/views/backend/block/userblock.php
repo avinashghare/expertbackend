@@ -11,6 +11,7 @@
 <li><a href="<?php echo site_url('site/viewcourse?id=').$before->id; ?>">courses</a></li>
 <li><a href="<?php echo site_url('site/viewcertification?id=').$before->id; ?>">certifications</a></li>
 <li><a href="<?php echo site_url('site/viewusergallery?id=').$before->id; ?>">usergallerys</a></li>
+<li><a href="<?php echo site_url('site/viewuserquestion?id=').$before->id; ?>">User Questions</a></li>
 </ul>
 </div>
 </section>
